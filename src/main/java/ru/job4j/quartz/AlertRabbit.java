@@ -8,27 +8,36 @@ import static org.quartz.SimpleScheduleBuilder.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.sql.*;
+import java.time.Instant;
 import java.util.Properties;
 
 public class AlertRabbit {
     public static void main(String[] args) {
-        try {
-            Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            scheduler.start();
-            JobDetail job = newJob(Rabbit.class).build();
-            SimpleScheduleBuilder times = simpleSchedule()
-                    .withIntervalInSeconds(Integer.parseInt(
-                            getProps().getProperty("rabbit.interval"))
-                    )
-                    .repeatForever();
-            Trigger trigger = newTrigger()
-                    .startNow()
-                    .withSchedule(times)
-                    .build();
-            scheduler.scheduleJob(job, trigger);
-        } catch (SchedulerException se) {
-            se.printStackTrace();
+        try (Connection connection = getConnection()) {
+            try {
+                Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+                scheduler.start();
+                JobDataMap data = new JobDataMap();
+                data.put("db", connection);
+                JobDetail job = newJob(Rabbit.class)
+                        .usingJobData(data)
+                        .build();
+                SimpleScheduleBuilder times = simpleSchedule();
+                Trigger trigger = newTrigger()
+                        .startNow()
+                        .withSchedule(times)
+                        .build();
+                scheduler.scheduleJob(job, trigger);
+                Thread.sleep(10000);
+                scheduler.shutdown();
+            } catch (SchedulerException se) {
+                se.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+
     }
 
     private static Properties getProps() {
@@ -42,10 +51,27 @@ public class AlertRabbit {
         return config;
     }
 
+    private static Connection getConnection() throws ClassNotFoundException, SQLException {
+        Properties props = getProps();
+        Class.forName(props.getProperty("db_driver-class-name"));
+        String url = props.getProperty("db_url");
+        String login = props.getProperty("db_username");
+        String password = props.getProperty("db_password");
+        return DriverManager.getConnection(url, login, password);
+    }
+
     public static class Rabbit implements Job {
         @Override
         public void execute(JobExecutionContext context) {
-            System.out.println("Rabbit runs here ...");
+            Connection connection = (Connection) context.getMergedJobDataMap().get("db");
+            try (PreparedStatement statement =
+                         connection.prepareStatement(
+                                 "insert into rabbit(create_date) values (?)")) {
+                statement.setTimestamp(1, Timestamp.from(Instant.now()));
+                statement.execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
