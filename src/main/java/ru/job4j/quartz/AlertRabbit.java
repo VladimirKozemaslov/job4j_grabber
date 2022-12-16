@@ -14,7 +14,8 @@ import java.util.Properties;
 
 public class AlertRabbit {
     public static void main(String[] args) {
-        try (Connection connection = getConnection()) {
+        Properties props = getProps();
+        try (Connection connection = getConnection(props)) {
             try {
                 Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
                 scheduler.start();
@@ -23,7 +24,9 @@ public class AlertRabbit {
                 JobDetail job = newJob(Rabbit.class)
                         .usingJobData(data)
                         .build();
-                SimpleScheduleBuilder times = simpleSchedule();
+                SimpleScheduleBuilder times = simpleSchedule()
+                        .withIntervalInSeconds(Integer.parseInt(props.getProperty("interval")))
+                        .repeatForever();
                 Trigger trigger = newTrigger()
                         .startNow()
                         .withSchedule(times)
@@ -51,8 +54,7 @@ public class AlertRabbit {
         return config;
     }
 
-    private static Connection getConnection() throws ClassNotFoundException, SQLException {
-        Properties props = getProps();
+    private static Connection getConnection(Properties props) throws ClassNotFoundException, SQLException {
         Class.forName(props.getProperty("db_driver-class-name"));
         String url = props.getProperty("db_url");
         String login = props.getProperty("db_username");
