@@ -18,10 +18,14 @@ public class HabrCareerParse {
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
 
     public static void main(String[] args) throws IOException, NullPointerException {
-        Connection connection = Jsoup.connect(PAGE_LINK);
+        System.out.println(getPagesInfo(5));
+    }
+
+    private static String getPageInfo(String pageLink) throws IOException, NullPointerException {
+        Connection connection = Jsoup.connect(pageLink);
         Document document = connection.get();
         Elements rows = document.select(".vacancy-card__inner");
-        rows.forEach(row -> {
+        return rows.stream().map(row -> {
             Element titleElement = row.select(".vacancy-card__title").first();
             Element linkElement = titleElement.child(0);
             String vacancyName = titleElement.text();
@@ -31,8 +35,21 @@ public class HabrCareerParse {
             HabrCareerDateTimeParser parser = new HabrCareerDateTimeParser();
             LocalDateTime localDateTime = parser.parse(dateTimeElement.attr("datetime"));
 
-            String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-            System.out.printf("%s %s %s%n", vacancyName, link, localDateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-        });
+            String vacancyLink = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
+            return String.format(
+                    "%s %s %s%n",
+                    vacancyName,
+                    vacancyLink,
+                    localDateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
+        }).reduce("", String::concat);
+    }
+
+    private static String getPagesInfo(int count) throws IOException, NullPointerException {
+        String rsl = "";
+        for (int i = 1; i <= count; i++) {
+            String link = PAGE_LINK.concat(String.format("?page=%d", i));
+            rsl = rsl.concat(getPageInfo(link));
+        }
+        return rsl;
     }
 }
