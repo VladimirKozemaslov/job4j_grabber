@@ -110,13 +110,13 @@ public class PsqlStore implements Store {
                         "VK Видео - это один из самых крупных сервисов потокового видео в России. "
                                 + "Ежедневно им пользуются десятки миллионов людей и перед нами стоит "
                                 + "амбициозная задача - стать видеосервисом 1 в РФ.",
-                        LocalDateTime.of(2022,12, 21, 16, 50)));
+                        LocalDateTime.of(2022, 12, 21, 16, 50)));
                 psqlStore.save(new Post("QA Automation Engineer",
                         "/vacancies/1000116009",
                         "Аутсорсинговая аккредитованная IT-компания Aston приглашает к "
                                 + "сотрудничеству QA Automation Engineer на "
                                 + "масштабный проект в сфере FinTech.",
-                        LocalDateTime.of(2022,12, 21, 17, 15)));
+                        LocalDateTime.of(2022, 12, 21, 17, 15)));
                 for (Post post : psqlStore.getAll()) {
                     System.out.println(post);
                 }
@@ -124,7 +124,7 @@ public class PsqlStore implements Store {
                         "/vacancies/1000108567",
                         "Наша команда объединяет более 1300 IT специалистов в 13 офисах "
                                 + "по всей стране. Мы гордимся нашими проектами:",
-                        LocalDateTime.of(2022,12, 21, 18, 11)));
+                        LocalDateTime.of(2022, 12, 21, 18, 11)));
                 System.out.println(psqlStore.findById(2));
             }
         } catch (Exception e) {
