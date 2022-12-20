@@ -17,18 +17,21 @@ public class HabrCareerParse {
 
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
 
-    public static void main(String[] args) throws IOException, NullPointerException {
+    public static void main(String[] args) {
         HabrCareerParse habrCareerParse = new HabrCareerParse();
-        System.out.println(habrCareerParse.retrieveDescription("https://career.habr.com/vacancies/1000108376"));
+        System.out.println(habrCareerParse.retrieveDescription("https://career.habr.com/vacancies/1000112410"));
     }
 
-    private Document getDocument(String pageLink) throws IOException {
-        Connection connection = Jsoup.connect(pageLink);
-        return connection.get();
-
+    private Document getDocument(String pageLink) {
+        try {
+            Connection connection = Jsoup.connect(pageLink);
+            return connection.get();
+        } catch (IOException e) {
+            throw new IllegalArgumentException();
+        }
     }
 
-    private String getPageInfo(String pageLink) throws IOException, NullPointerException {
+    private String getPageInfo(String pageLink) {
         Document document = getDocument(pageLink);
         Elements rows = document.select(".vacancy-card__inner");
         return rows.stream().map(row -> {
@@ -50,7 +53,7 @@ public class HabrCareerParse {
         }).reduce("", String::concat);
     }
 
-    private String getPagesInfo(int count) throws IOException, NullPointerException {
+    private String getPagesInfo(int count) {
         String rsl = "";
         for (int i = 1; i <= count; i++) {
             String link = PAGE_LINK.concat(String.format("?page=%d", i));
@@ -59,10 +62,10 @@ public class HabrCareerParse {
         return rsl;
     }
 
-    private String retrieveDescription(String link) throws IOException, NullPointerException {
+    private String retrieveDescription(String link) {
         Document document = getDocument(link);
-        Element descriptionText = document.select(".vacancy-description__text").first();
+        Element descriptionText = document.select(".style-ugc").first();
         Elements contents = descriptionText.select("p");
-        return contents.stream().map(Element::text).reduce("", (total, text) -> total.concat(text).concat(System.lineSeparator()));
+        return contents.stream().map(Element::text).reduce("", String::concat);
     }
 }
