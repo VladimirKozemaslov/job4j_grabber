@@ -22,13 +22,15 @@ public class HabrCareerParse implements Parse {
 
     private final DateTimeParser dateTimeParser;
 
+    private final int pageCount = 5;
+
     public HabrCareerParse(DateTimeParser dateTimeParser) {
         this.dateTimeParser = dateTimeParser;
     }
 
     public static void main(String[] args) {
         HabrCareerParse habrCareerParse = new HabrCareerParse(new HabrCareerDateTimeParser());
-        List<Post> posts = habrCareerParse.list(PAGE_LINK);
+        List<Post> posts = habrCareerParse.list(PAGE_LINK.concat("?page="));
         for (Post post : posts) {
             System.out.println(post);
         }
@@ -69,9 +71,9 @@ public class HabrCareerParse implements Parse {
     @Override
     public List<Post> list(String link) {
         List<Post> list = new ArrayList<>();
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 1; i <= pageCount; i++) {
             list.addAll(getPagePosts(
-                    link.concat(String.format("?page=%d", i))
+                    link + i
             ));
         }
         return list;
