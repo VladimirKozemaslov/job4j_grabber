@@ -45,9 +45,8 @@ public class HabrCareerParse implements Parse {
 
     private String retrieveDescription(String link) {
         Document document = getDocument(link);
-        Element descriptionText = document.select(".style-ugc").first();
-        Elements contents = descriptionText.select("p");
-        return contents.stream().map(Element::text).reduce("", String::concat);
+        Element descriptionElem = document.select(".style-ugc").first();
+        return descriptionElem.text();
     }
 
     private Post getPost(Element vacancy) {
