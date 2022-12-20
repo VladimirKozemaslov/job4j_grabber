@@ -2,7 +2,9 @@ package ru.job4j.grabber;
 
 import ru.job4j.quartz.AlertRabbit;
 
+import java.io.InputStream;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -41,7 +43,6 @@ public class PsqlStore implements Store {
         } catch (SQLException e) {
             throw new IllegalStateException(e);
         }
-
     }
 
     @Override
@@ -94,6 +95,39 @@ public class PsqlStore implements Store {
                     resultSet.getTimestamp("created").toLocalDateTime()
             );
         } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public static void main(String[] args) {
+        try (InputStream in = PsqlStore.class.getClassLoader()
+                .getResourceAsStream("grabber.properties")) {
+            Properties config = new Properties();
+            config.load(in);
+            try (PsqlStore psqlStore = new PsqlStore(config)) {
+                psqlStore.save(new Post("Android-разработчик в ВК Видео",
+                        "/vacancies/1000108567",
+                        "VK Видео - это один из самых крупных сервисов потокового видео в России. "
+                                + "Ежедневно им пользуются десятки миллионов людей и перед нами стоит "
+                                + "амбициозная задача - стать видеосервисом 1 в РФ.",
+                        LocalDateTime.of(2022,12, 21, 16, 50)));
+                psqlStore.save(new Post("QA Automation Engineer",
+                        "/vacancies/1000116009",
+                        "Аутсорсинговая аккредитованная IT-компания Aston приглашает к "
+                                + "сотрудничеству QA Automation Engineer на "
+                                + "масштабный проект в сфере FinTech.",
+                        LocalDateTime.of(2022,12, 21, 17, 15)));
+                for (Post post : psqlStore.getAll()) {
+                    System.out.println(post);
+                }
+                psqlStore.save(new Post("Разработчик Java (Биометрия)",
+                        "/vacancies/1000108567",
+                        "Наша команда объединяет более 1300 IT специалистов в 13 офисах "
+                                + "по всей стране. Мы гордимся нашими проектами:",
+                        LocalDateTime.of(2022,12, 21, 18, 11)));
+                System.out.println(psqlStore.findById(2));
+            }
+        } catch (Exception e) {
             throw new IllegalStateException(e);
         }
     }
