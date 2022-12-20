@@ -5,21 +5,33 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import ru.job4j.grabber.utils.DateTimeParser;
 import ru.job4j.grabber.utils.HabrCareerDateTimeParser;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
-public class HabrCareerParse {
+public class HabrCareerParse implements Parse {
 
     private static final String SOURCE_LINK = "https://career.habr.com";
 
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
 
+    private final DateTimeParser dateTimeParser;
+
+    public HabrCareerParse(DateTimeParser dateTimeParser) {
+        this.dateTimeParser = dateTimeParser;
+    }
+
     public static void main(String[] args) {
-        HabrCareerParse habrCareerParse = new HabrCareerParse();
-        System.out.println(habrCareerParse.retrieveDescription("https://career.habr.com/vacancies/1000112410"));
+        HabrCareerParse habrCareerParse = new HabrCareerParse(new HabrCareerDateTimeParser());
+        List<Post> posts = habrCareerParse.list(PAGE_LINK);
+        for (Post post : posts) {
+            System.out.println(post);
+        }
     }
 
     private Document getDocument(String pageLink) {
@@ -31,41 +43,38 @@ public class HabrCareerParse {
         }
     }
 
-    private String getPageInfo(String pageLink) {
-        Document document = getDocument(pageLink);
-        Elements rows = document.select(".vacancy-card__inner");
-        return rows.stream().map(row -> {
-            Element titleElement = row.select(".vacancy-card__title").first();
-            Element linkElement = titleElement.child(0);
-            String vacancyName = titleElement.text();
-
-            Element dateElement = row.select(".vacancy-card__date").first();
-            Element dateTimeElement = dateElement.child(0);
-            HabrCareerDateTimeParser parser = new HabrCareerDateTimeParser();
-            LocalDateTime localDateTime = parser.parse(dateTimeElement.attr("datetime"));
-
-            String vacancyLink = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
-            return String.format(
-                    "%s %s %s%n",
-                    vacancyName,
-                    vacancyLink,
-                    localDateTime.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")));
-        }).reduce("", String::concat);
-    }
-
-    private String getPagesInfo(int count) {
-        String rsl = "";
-        for (int i = 1; i <= count; i++) {
-            String link = PAGE_LINK.concat(String.format("?page=%d", i));
-            rsl = rsl.concat(getPageInfo(link));
-        }
-        return rsl;
-    }
-
     private String retrieveDescription(String link) {
         Document document = getDocument(link);
         Element descriptionText = document.select(".style-ugc").first();
         Elements contents = descriptionText.select("p");
         return contents.stream().map(Element::text).reduce("", String::concat);
+    }
+
+    private Post getPost(Element vacancy) {
+        Element titleElement = vacancy.select(".vacancy-card__title").first();
+        String title = titleElement.text();
+        String link = titleElement.child(0).attr("href");
+        String description = retrieveDescription(SOURCE_LINK.concat(link));
+        Element dateTimeElement = vacancy.select(".vacancy-card__date")
+                .first().child(0);
+        LocalDateTime created = dateTimeParser.parse(dateTimeElement.attr("datetime"));
+        return new Post(title, link, description, created);
+    }
+
+    private List<Post> getPagePosts(String link) {
+        Document document = getDocument(link);
+        Elements vacancies = document.select(".vacancy-card__inner");
+        return vacancies.stream().map(this::getPost).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Post> list(String link) {
+        List<Post> list = new ArrayList<>();
+        for (int i = 1; i <= 5; i++) {
+            list.addAll(getPagePosts(
+                    link.concat(String.format("?page=%d", i))
+            ));
+        }
+        return list;
     }
 }
