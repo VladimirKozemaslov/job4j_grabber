@@ -20,9 +20,9 @@ public class HabrCareerParse implements Parse {
 
     private static final String PAGE_LINK = String.format("%s/vacancies/java_developer", SOURCE_LINK);
 
-    private final DateTimeParser dateTimeParser;
+    private static final int PAGE_COUNT = 5;
 
-    private final int pageCount = 5;
+    private final DateTimeParser dateTimeParser;
 
     public HabrCareerParse(DateTimeParser dateTimeParser) {
         this.dateTimeParser = dateTimeParser;
@@ -71,7 +71,7 @@ public class HabrCareerParse implements Parse {
     @Override
     public List<Post> list(String link) {
         List<Post> list = new ArrayList<>();
-        for (int i = 1; i <= pageCount; i++) {
+        for (int i = 1; i <= PAGE_COUNT; i++) {
             list.addAll(getPagePosts(
                     link + i
             ));
