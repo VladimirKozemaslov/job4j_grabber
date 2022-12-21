@@ -1,7 +1,5 @@
 package ru.job4j.grabber;
 
-import ru.job4j.quartz.AlertRabbit;
-
 import java.io.InputStream;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -106,7 +104,7 @@ public class PsqlStore implements Store {
 
     public static void main(String[] args) {
         try (InputStream in = PsqlStore.class.getClassLoader()
-                .getResourceAsStream("grabber.properties")) {
+                .getResourceAsStream("app.properties")) {
             Properties config = new Properties();
             config.load(in);
             try (PsqlStore psqlStore = new PsqlStore(config)) {
